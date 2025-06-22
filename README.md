@@ -1,4 +1,4 @@
-# RobustVideoMatting
+# Virtual Background
 
 A real-time virtual background application built with TensorFlow.js. This project uses a pre-trained deep learning model to perform video matting, allowing users to replace backgrounds in real-time video streams.
 
