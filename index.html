@@ -3,23 +3,27 @@
 
 <head>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.7.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0.5"></script>
     <script>
         let valueChanged = false;
+        let bodyPixNet;
+
         async function main() {
             const video = document.querySelector('video');
             const canvas = document.querySelector('canvas');
             const select = document.querySelector('select');
             let previousValue = select.value;
-            let currentValue = null;
 
             video.width = 640;
             video.height = 480;
+
             const webcam = await tf.data.webcam(video);
             const model = await tf.loadGraphModel('model/model.json');
+            bodyPixNet = await bodyPix.load(); // Load BodyPix
+
             let [r1i, r2i, r3i, r4i] = [tf.tensor(0.), tf.tensor(0.), tf.tensor(0.), tf.tensor(0.)];
             const downsample_ratio = tf.tensor(0.5);
 
-            // Background options configuration
             const backgroundOptions = {
                 'white': { fgr: true, pha: true, background: 'rgb(255, 255, 255)' },
                 'green': { fgr: true, pha: true, background: 'rgb(120, 255, 155)' },
@@ -30,10 +34,10 @@
                 'image4': { fgr: true, pha: true, background: 'url(images/image4.jpg) center center / cover' },
                 'image5': { fgr: true, pha: true, background: 'url(images/image5.avif) center center / cover' },
                 'image6': { fgr: true, pha: true, background: 'url(images/image6.jpg) center center / cover' },
-                'image8': { fgr: true, pha: true, background: 'url(images/image8.avif) center center / cover' }
+                'image8': { fgr: true, pha: true, background: 'url(images/image8.avif) center center / cover' },
+                'blur': { fgr: false, pha: false, background: null } // handled separately
             };
 
-            // Loop to add background to each frame
             while (true) {
                 await tf.nextFrame();
                 const img = await webcam.capture();
@@ -44,22 +48,16 @@
                 );
 
                 const viewOption = select.value;
-                if (viewOption !== previousValue) {
-                    valueChanged = true;
-                    previousValue = viewOption;
-                } else {
-                    valueChanged = false;
-                }
+                valueChanged = viewOption !== previousValue;
+                previousValue = viewOption;
 
                 if (valueChanged && viewOption.includes('image')) {
-                    /*
-                    This is a hack to force tensorflow to re-render the background when switching from color to image.
-                    It is necessary because tensorflow was not rendering the background when switching from color to image.
-                    */
                     drawHidden(r4o, canvas);
                 }
 
-                if (backgroundOptions[viewOption]) {
+                if (viewOption === 'blur') {
+                    await drawBlurredBackground(video, canvas);
+                } else if (backgroundOptions[viewOption]) {
                     const option = backgroundOptions[viewOption];
                     const fgrTensor = option.fgr ? fgr.clone() : null;
                     const phaTensor = option.pha ? pha.clone() : null;
@@ -68,9 +66,26 @@
                         canvas.style.background = option.background;
                     }
                 }
+
                 tf.dispose([img, src, fgr, pha, r1i, r2i, r3i, r4i]);
                 [r1i, r2i, r3i, r4i] = [r1o, r2o, r3o, r4o];
             }
+        }
+
+        async function drawBlurredBackground(video, canvas) {
+            const segmentation = await bodyPixNet.segmentPerson(video);
+            const backgroundBlurAmount = 6;
+            const edgeBlurAmount = 3;
+            const flipHorizontal = false;
+
+            bodyPix.drawBokehEffect(
+                canvas,
+                video,
+                segmentation,
+                backgroundBlurAmount,
+                edgeBlurAmount,
+                flipHorizontal
+            );
         }
 
         async function drawMatte(fgr, pha, canvas) {
@@ -132,9 +147,10 @@
         <option value="green">Green Background</option>
         <option value="alpha">Alpha</option>
         <option value="foreground">Foreground</option>
+        <option value="blur">Blur Background</option>
     </select>
     <br>
-    <video></video>
+    <video autoplay muted playsinline></video>
     <canvas></canvas>
 </body>
 
