@@ -104,6 +104,8 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ## 🙏 Acknowledgments
 
+- **PeterL1n** for the original [RobustVideoMatting TensorFlow.js implementation](https://github.com/PeterL1n/RobustVideoMatting/tree/tfjs)
+- This project is based on the RobustVideoMatting TensorFlow.js implementation by PeterL1n. The code and pre-trained model are sourced from the original repository.
 - TensorFlow.js team for the amazing framework
 - Robust Video Matting research team
 - All contributors and users of this project
