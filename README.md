@@ -13,7 +13,7 @@ A real-time AI-powered video background replacement tool built with TensorFlow.j
 
 ## 🚀 Live Demo
 
-Visit the live demo: [Robust Video Matting Demo](https://rajat-0206.github.io/RobustVideoMatting/)
+Visit the live demo: [Robust Video Matting Demo](https://rajat-0206.github.io/virtual_background/)
 
 ## 🛠️ Technology Stack
 
@@ -25,7 +25,7 @@ Visit the live demo: [Robust Video Matting Demo](https://rajat-0206.github.io/Ro
 ## 📁 Project Structure
 
 ```
-RobustVideoMatting/
+virtual_background/
 ├── index.html          # Main application file
 ├── script.js           # JavaScript logic and AI processing
 ├── model/              # AI model files
@@ -61,8 +61,8 @@ RobustVideoMatting/
 ### Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/rajat-0206/RobustVideoMatting.git
-   cd RobustVideoMatting
+   git clone https://github.com/rajat-0206/virtual_background.git
+   cd virtual_background
    ```
 
 2. Start a local web server:
