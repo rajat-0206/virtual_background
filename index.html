@@ -1,168 +1,336 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robust Video Matting - AI Background Replacement</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.7.0/dist/tf.min.js"></script>
-    <script>
-        let valueChanged = false;
+    <script src="script.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        async function main() {
-            const video = document.querySelector('video');
-            const canvas = document.querySelector('canvas');
-            const select = document.querySelector('select');
-            let previousValue = select.value;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
 
-            video.width = 640;
-            video.height = 480;
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            backdrop-filter: blur(10px);
+        }
 
-            const webcam = await tf.data.webcam(video);
-            const model = await tf.loadGraphModel('model/model.json');
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
 
-            let [r1i, r2i, r3i, r4i] = [tf.tensor(0.), tf.tensor(0.), tf.tensor(0.), tf.tensor(0.)];
-            const downsample_ratio = tf.tensor(0.5);
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-            const backgroundOptions = {
-                'white': { fgr: true, pha: true, background: 'rgb(255, 255, 255)' },
-                'green': { fgr: true, pha: true, background: 'rgb(120, 255, 155)' },
-                'alpha': { fgr: false, pha: true, background: 'rgb(0, 0, 0)' },
-                'foreground': { fgr: true, pha: false, background: 'rgb(245, 252, 235)' },
-                'image': { fgr: true, pha: true, background: 'url(images/image2.png) center center / cover' },
-                'image3': { fgr: true, pha: true, background: 'url(images/image3.png) center center / cover' },
-                'image4': { fgr: true, pha: true, background: 'url(images/image4.jpg) center center / cover' },
-                'image5': { fgr: true, pha: true, background: 'url(images/image5.avif) center center / cover' },
-                'image6': { fgr: true, pha: true, background: 'url(images/image6.jpg) center center / cover' },
-                'image8': { fgr: true, pha: true, background: 'url(images/image8.avif) center center / cover' },
-                'blur': { fgr: true, pha: false, background: null } // handled separately
-            };
+        .subtitle {
+            font-size: 1.1rem;
+            color: #718096;
+            font-weight: 400;
+        }
 
-            while (true) {
-                await tf.nextFrame();
-                const img = await webcam.capture();
-                const src = tf.tidy(() => img.expandDims(0).div(255));
-                const [fgr, pha, r1o, r2o, r3o, r4o] = await model.executeAsync(
-                    { src, r1i, r2i, r3i, r4i, downsample_ratio },
-                    ['fgr', 'pha', 'r1o', 'r2o', 'r3o', 'r4o']
-                );
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
 
-                const viewOption = select.value;
-                valueChanged = viewOption !== previousValue;
-                previousValue = viewOption;
+        .select-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
 
-                if (valueChanged && viewOption.includes('image')) {
-                        drawHidden(r4o, canvas);
-                }
+        .background-select {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+        }
 
-                if (viewOption === 'blur') {
-                    drawMatte(fgr, pha, canvas);
-                    const baseImage = await drawImage(img, canvas);
-                    canvas.style.background = `url(${baseImage})`;
-                } else if (backgroundOptions[viewOption]) {
-                    const option = backgroundOptions[viewOption];
-                    const fgrTensor = option.fgr ? fgr.clone() : null;
-                    const phaTensor = option.pha ? pha.clone() : null;
-                    drawMatte(fgrTensor, phaTensor, canvas);
-                    if (option.background) {
-                        canvas.style.background = option.background;
-                    }
-                }
+        .background-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
 
-                tf.dispose([img, src, fgr, pha, r1i, r2i, r3i, r4i]);
-                [r1i, r2i, r3i, r4i] = [r1o, r2o, r3o, r4o];
+        .background-select:hover {
+            border-color: #667eea;
+        }
+
+        .control-panel {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        async function drawImage(img, canvas) {
-            const imgcanvas = document.getElementById('imgcanvas');
-                // Make sure tensor is in uint8 format and shape [height, width, 3]
-            const [height, width, channels] = img.shape;
-            let imgTensor = img;
-            if (img.dtype !== 'int32' && img.dtype !== 'uint8') {
-                imgTensor = img.mul(255).cast('int32');
+        .control-panel label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.95rem;
+        }
+
+        .color-input {
+            width: 100%;
+            height: 50px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .color-input:hover {
+            border-color: #667eea;
+        }
+
+        .url-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .apply-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+
+        .apply-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: #000;
+        }
+
+        .camera-view {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 16px;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+        }
+
+        .hidden-canvas {
+            display: none;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2rem;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 10;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
             }
-            const data = new Uint8ClampedArray(await imgTensor.data());
-            let rgbaData = new Uint8ClampedArray(width * height * 4);
-            for (let i = 0, j = 0; i < data.length; i += 3, j += 4) {
-                rgbaData[j] = data[i];     // R
-                rgbaData[j + 1] = data[i + 1]; // G
-                rgbaData[j + 2] = data[i + 2]; // B
-                rgbaData[j + 3] = 255;     // A
+
+            .title {
+                font-size: 2rem;
             }
-            const imageData = new ImageData(rgbaData, width, height);
-            imgcanvas.width = width;
-            imgcanvas.height = height;
-            imgcanvas.getContext('2d').putImageData(imageData, 0, 0);
-            const ctx = imgcanvas.getContext('2d');
-            ctx.filter = 'blur(10px)';
-            ctx.drawImage(imgcanvas, 0, 0);
-            ctx.filter = 'none';
-            return imgcanvas.toDataURL();
-        }
 
-        async function drawMatte(fgr, pha, canvas) {
-            const rgba = tf.tidy(() => {
-                const rgb = (fgr !== null) ?
-                    fgr.squeeze(0).mul(255).cast('int32') :
-                    tf.fill([pha.shape[1], pha.shape[2], 3], 255, 'int32');
-                const a = (pha !== null) ?
-                    pha.squeeze(0).mul(255).cast('int32') :
-                    tf.fill([fgr.shape[1], fgr.shape[2], 1], 255, 'int32');
-                return tf.concat([rgb, a], -1);
-            });
-            fgr && fgr.dispose();
-            pha && pha.dispose();
-            const [height, width] = rgba.shape.slice(0, 2);
-            const pixelData = new Uint8ClampedArray(await rgba.data());
-            const imageData = new ImageData(pixelData, width, height);
-            canvas.width = width;
-            canvas.height = height;
-            canvas.getContext('2d').putImageData(imageData, 0, 0);
-            rgba.dispose();
+            .camera-container {
+                max-width: 100%;
+            }
         }
-
-        async function drawHidden(r, canvas) {
-            const rgba = tf.tidy(() => {
-                r = r.unstack(-1)
-                r = tf.concat(r, 1)
-                r = r.split(4, 1)
-                r = tf.concat(r, 2)
-                r = r.squeeze(0)
-                r = r.expandDims(-1)
-                r = r.add(1).mul(127.5).cast('int32')
-                r = r.tile([1, 1, 3])
-                r = tf.concat([r, tf.fill([r.shape[0], r.shape[1], 1], 255, 'int32')], -1)
-                return r;
-            });
-            const [height, width] = rgba.shape.slice(0, 2);
-            const pixelData = new Uint8ClampedArray(await rgba.data());
-            const imageData = new ImageData(pixelData, width, height);
-            canvas.width = width;
-            canvas.height = height;
-            canvas.getContext('2d').putImageData(imageData, 0, 0);
-            rgba.dispose();
-        }
-
-        window.addEventListener('load', main);
-    </script>
+    </style>
 </head>
 
 <body>
-    <select>
-        <option value="image">Image Background (image2.png)</option>
-        <option value="image3">Image Background (image3.png)</option>
-        <option value="image4">Image Background (image4.jpg)</option>
-        <option value="image5">Image Background (image5.avif)</option>
-        <option value="image6">Image Background (image6.jpg)</option>
-        <option value="image8">Image Background (image8.avif)</option>
-        <option value="white">White Background</option>
-        <option value="green">Green Background</option>
-        <option value="alpha">Alpha</option>
-        <option value="foreground">Foreground</option>
-        <option value="blur">Blur Background</option>
-    </select>
-    <br>
-    <video autoplay muted playsinline></video>
-    <canvas></canvas>
-    <canvas id="imgcanvas" style="display: none;"></canvas>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Robust Video Matting</h1>
+            <p class="subtitle">AI-powered real-time background replacement with virtual backgrounds</p>
+        </div>
+
+        <div class="controls">
+            <div class="select-container">
+                <select class="background-select" id="backgroundSelect">
+                    <option value="default" selected>Default Camera View</option>
+                    <option value="color">Custom Color</option>
+                    <option value="image">Virtual Background 1</option>
+                    <option value="image3">Virtual Background 2</option>
+                    <option value="image4">Virtual Background 3</option>
+                    <option value="image5">Virtual Background 4</option>
+                    <option value="image6">Virtual Background 5</option>
+                    <option value="image8">Virtual Background 6</option>
+                    <option value="custom-image">Custom Image</option>
+                    <option value="blur">Blur Background</option>
+                </select>
+            </div>
+
+            <!-- Color Picker (hidden by default) -->
+            <div class="control-panel" id="colorPanel" style="display: none;">
+                <label for="colorPicker">Choose Background Color:</label>
+                <input type="color" id="colorPicker" value="#ffffff" class="color-input">
+            </div>
+
+            <!-- Custom Image URL (hidden by default) -->
+            <div class="control-panel" id="customImagePanel" style="display: none;">
+                <label for="imageUrl">Enter Image URL:</label>
+                <div class="url-input-container">
+                    <input type="url" id="imageUrl" placeholder="https://example.com/image.jpg" class="url-input">
+                    <button id="applyImageBtn" class="apply-btn">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="camera-container">
+            <div class="camera-view">
+                <video autoplay muted playsinline></video>
+                <canvas></canvas>
+                <canvas id="imgcanvas" class="hidden-canvas"></canvas>
+                <div class="loading" id="loading">Loading AI model...</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by TensorFlow.js and Robust Video Matting AI</p>
+            <p>Developed by <a href="https://github.com/rajatshrivastava" target="_blank" style="color: #667eea; text-decoration: none; font-weight: 600;">Rajat Shrivastava</a></p>
+        </div>
+    </div>
 </body>
 
 </html>

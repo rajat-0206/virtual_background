@@ -1,103 +1,118 @@
-# Virtual Background
+# Robust Video Matting - AI Background Replacement
 
-A real-time virtual background application built with TensorFlow.js. This project uses a pre-trained deep learning model to perform video matting, allowing users to replace backgrounds in real-time video streams.
+A real-time AI-powered video background replacement tool built with TensorFlow.js and Robust Video Matting technology. This web application allows users to replace video backgrounds in real-time using their webcam.
 
-## Features
+## 🌟 Features
 
-- **Real-time video processing**: Live webcam feed processing with background removal
-- **Multiple background options**: 
-  - Solid color backgrounds (white, green)
-  - Custom image backgrounds
-  - Alpha channel view
-  - Foreground-only view
-- **Recurrent state visualization**: View internal model states for debugging
-- **High-quality matting**: Uses a robust video matting model for smooth results
+- **Real-time Background Replacement**: Instant AI-powered background removal and replacement
+- **Custom Color Backgrounds**: Choose any color for your background
+- **Virtual Backgrounds**: 6 pre-loaded virtual background options
+- **Custom Image Upload**: Add your own background images via URL
+- **Professional UI**: Clean, modern interface with smooth animations
+- **Cross-platform**: Works on any device with a webcam and modern browser
 
-## How It Works
+## 🚀 Live Demo
 
-The application uses a pre-trained TensorFlow.js model that performs video matting by:
-1. Capturing frames from your webcam
-2. Processing each frame through a neural network
-3. Extracting foreground and alpha matte
-4. Compositing the result with your chosen background
-5. Displaying the result in real-time
+Visit the live demo: [Robust Video Matting Demo](https://rajatshrivastava.github.io/RobustVideoMatting/)
 
-## Prerequisites
+## 🛠️ Technology Stack
 
-- A modern web browser with WebRTC support
-- Webcam access
-- No additional software installation required
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **AI Framework**: TensorFlow.js 3.7.0
+- **AI Model**: Robust Video Matting
+- **Deployment**: GitHub Pages
 
-## Getting Started
-
-1. **Clone or download** this repository to your local machine
-
-2. **Open the application**:
-   - Simply open `index.html` in your web browser
-   - Or serve the files using a local web server
-
-3. **Grant camera permissions** when prompted by your browser
-
-4. **Select your desired background** from the dropdown menu:
-   - **Image backgrounds**: Various pre-loaded background images
-   - **White/Green**: Solid color backgrounds
-   - **Alpha**: View the alpha matte only
-   - **Foreground**: View the extracted foreground only
-   - **Recurrent states**: Debug views of internal model states
-
-## Usage
-
-- The video feed will automatically start when you load the page
-- Use the dropdown menu to switch between different background options
-- The canvas will display the processed result in real-time
-- The model maintains temporal consistency across frames for smooth results
-
-## File Structure
+## 📁 Project Structure
 
 ```
 RobustVideoMatting/
 ├── index.html          # Main application file
-├── model/              # TensorFlow.js model files
-│   ├── model.json      # Model architecture
+├── script.js           # JavaScript logic and AI processing
+├── model/              # AI model files
+│   ├── model.json      # Model configuration
 │   └── group1-shard1of1.bin  # Model weights
-├── images/               # Background images
+├── images/             # Virtual background images
 │   ├── image2.png
 │   ├── image3.png
 │   ├── image4.jpg
 │   ├── image5.avif
 │   ├── image6.jpg
 │   └── image8.avif
+└── README.md           # Project documentation
 ```
 
-## Technical Details
+## 🎯 How to Use
 
-- **Framework**: TensorFlow.js 3.7.0
-- **Model**: Pre-trained video matting model with recurrent states
-- **Input**: 640x480 webcam feed
-- **Processing**: Real-time inference with GPU acceleration (when available)
-- **Output**: RGBA canvas with composited background
+1. **Open the Application**: Navigate to the live demo or run locally
+2. **Allow Camera Access**: Grant permission for webcam access when prompted
+3. **Choose Background Option**:
+   - **Default**: Shows original camera feed
+   - **Custom Color**: Pick any color for background
+   - **Virtual Backgrounds**: Select from 6 pre-loaded backgrounds
+   - **Custom Image**: Enter URL of your own background image
+4. **Real-time Processing**: The AI processes your video feed in real-time
 
-## Browser Compatibility
+## 🔧 Local Development
 
-This application works best in modern browsers that support:
-- WebRTC (for webcam access)
-- WebGL (for GPU acceleration)
-- ES6+ JavaScript features
+### Prerequisites
+- Modern web browser with webcam support
+- Local web server (for development)
 
-Recommended browsers:
-- Chrome 80+
-- Firefox 75+
-- Safari 13+
-- Edge 80+
+### Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/rajatshrivastava/RobustVideoMatting.git
+   cd RobustVideoMatting
+   ```
 
-## Performance
+2. Start a local web server:
+   ```bash
+   # Using Python 3
+   python -m http.server 8000
+   
+   # Using Node.js (if you have http-server installed)
+   npx http-server
+   
+   # Using PHP
+   php -S localhost:8000
+   ```
 
-- The application runs entirely in the browser using TensorFlow.js
-- GPU acceleration is automatically used when available
-- Processing speed depends on your device's capabilities
-- The model uses a downsample ratio of 0.5 for optimal performance
+3. Open your browser and navigate to `http://localhost:8000`
 
-## Credits
+## 🌐 Browser Compatibility
 
-This project is based on the [RobustVideoMatting TensorFlow.js implementation](https://github.com/PeterL1n/RobustVideoMatting/tree/tfjs) by PeterL1n. The code and pre-trained model are sourced from the original repository.
+- Chrome 67+
+- Firefox 60+
+- Safari 11+
+- Edge 79+
+
+## 📱 Mobile Support
+
+The application works on mobile devices with webcam support, though performance may vary based on device capabilities.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## 👨‍💻 Developer
+
+**Developed by [Rajat Shrivastava](https://github.com/rajatshrivastava)**
+
+## 🙏 Acknowledgments
+
+- TensorFlow.js team for the amazing framework
+- Robust Video Matting research team
+- All contributors and users of this project
+
+## 📞 Support
+
+If you encounter any issues or have questions, please open an issue on GitHub.
+
+---
+
+⭐ **Star this repository if you find it useful!**
 
